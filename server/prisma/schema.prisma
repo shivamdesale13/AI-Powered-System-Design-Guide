@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProblemDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  passwordHash String?
+  authProvider AuthProvider @default(LOCAL)
+  googleId     String?      @unique
+  avatarUrl    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  submissions  Submission[]
+}
+
+model Problem {
+  id               String            @id @default(cuid())
+  title            String
+  slug             String            @unique
+  description      String
+  prompt           String
+  difficulty       ProblemDifficulty
+  expectedServices Json
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  submissions      Submission[]
+}
+
+model Submission {
+  id                  String      @id @default(cuid())
+  userId              String
+  problemId           String
+  overview            String
+  requirements        String
+  capacityEstimation  String
+  dataModel           String
+  apiDesign           String
+  highLevelDesign     String
+  deepDives           String
+  bottlenecks         String
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem             Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  evaluation          Evaluation?
+
+  @@index([userId, createdAt])
+  @@index([problemId, createdAt])
+}
+
+model Evaluation {
+  id                  String     @id @default(cuid())
+  submissionId        String     @unique
+  score               Int
+  strengths           Json
+  weaknesses          Json
+  missingComponents   Json
+  scalabilityReview   String
+  tradeOffsReview     String
+  databaseReview      String
+  apiReview           String
+  reliabilityReview   String
+  finalRecommendation String
+  idealAnswerOutline  Json
+  rawResponse         Json
+  createdAt           DateTime   @default(now())
+  submission          Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
